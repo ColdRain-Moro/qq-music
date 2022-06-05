@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/qq-music/assets/favicon.17e50649.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QQ音乐</title>
+  <script type="module" crossorigin src="/qq-music/assets/index.af80f4b3.js"></script>
+  <link rel="stylesheet" href="/qq-music/assets/index.eae6641b.css">
+</head>
+
+<body>
+
+  <template id="tab-template">
+    <style>
+      .tab-header {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        height: 3rem;
+        width: 100%;
+        background-color: #fff;
+        color: gray;
+      }
+
+      .tab-item {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        height: 100%;
+        width: 50%;
+        font-weight: 300;
+        cursor: pointer;
+      }
+
+      .selected span {
+        color: #22d59c;
+      }
+
+      .selected span::after {
+        content: "";
+        display: block;
+        margin: auto;
+        width: 70%;
+        height: 3px;
+        background: #2ed7a1;
+        transform: scaleY(1);
+        position: relative;
+        top: 12px
+      }
+    </style>
+    <div class="card tab-header">
+      <div class="tab-item recommend selected">
+        <span>推荐</span>
+      </div>
+      <div class="tab-item rank">
+        <span>排行</span>
+      </div>
+    </div>
+  </template>
+
+  <template id="search-template">
+    <style>
+      .search-box {
+        padding: 1rem;
+        width: 100%;
+        display: flex;
+        box-sizing: border-box;
+        align-items: center;
+      }
+
+      .search-bar-bg {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+        border-radius: 16px;
+        background: #fff;
+        flex: 7;
+      }
+
+      .search-input {
+        width: 90%;
+        height: 100%;
+        border: none;
+        outline: none;
+        padding: 0.5rem;
+        font-size: 1rem;
+        color: gray;
+        text-align: center;
+        background-color: transparent;
+      }
+
+      .search-input:focus {
+        text-align: left;
+      }
+
+      input::-webkit-search-cancel-button {
+        display: none;
+      }
+
+      .search-bar-bg::before {
+        display: inline-block;
+        content: "";
+        width: 20px;
+        height: 20px;
+        background: url('/qq-music/assets/search.38a117a4.svg') no-repeat center;
+        background-size: contain;
+      }
+
+      .cancel-btn {
+        display: none;
+        /* display: inline-block; */
+        font-weight: 700;
+        flex: 1;
+        margin-left: 10px;
+        cursor: pointer;
+      }
+    </style>
+    <div class="search-box">
+      <div class="search-bar-bg card">
+        <input class="search-input" type="search" placeholder="搜索" />
+      </div>
+      <span class="cancel-btn">取消</span>
+    </div>
+  </template>
+
+  <template id="row-list-template">
+    <style>
+      .list-box {
+        padding: 0 1rem;
+        width: 100%;
+        height: fit-content;
+      }
+
+      h2 {
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .row-slide-box {
+        display: flex;
+        width: 100%;
+        height: fit-content;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        align-items: center;
+        overflow: scroll;
+      }
+
+      .row-slide-box::-webkit-scrollbar {
+        display: none;
+      }
+    </style>
+    <div class="list-box">
+      <h3>
+        <slot name="title">MISSING TITLE</slot>
+      </h3>
+      <div class="row-slide-box">
+      </div>
+    </div>
+  </template>
+
+  <template id="song-list-item-template">
+    <style>
+      .item-box {
+        display: inline-block;
+        width: 7em;
+        margin-right: 10px;
+      }
+
+      p {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        margin: 5px 0;
+      }
+
+      .song-img {
+        width: 100%;
+        height: 7em;
+        background: url("https://qpic.y.qq.com/music_cover/xiabfMZAmQ0PYUzgCvOicArIoGLzqL3n6q3fDiawWkhTTVWgGNM52HBNA/300?n=1");
+        background-size: contain;
+        border-radius: 8px;
+        position: relative;
+      }
+
+      .play-count {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        z-index: 5;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: center;
+
+        background-color: rgba(26, 26, 26, 0.5);
+        color: white;
+        padding: 5px;
+        font-size: small;
+        border-radius: 16px;
+      }
+
+      .play-count::before {
+        content: "";
+        width: 10px;
+        height: 10px;
+        background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAMAAAC6V+0/AAAAQlBMVEUAAAD///////////////////////////////////////////////////////////////////////////////////8IX9KGAAAAFXRSTlMANKf2EQjsz8aUemg9LSMb29qrT07ELBLNAAAAUklEQVQY053QSQ6AIBBE0bYBxQFwqvtf1bgimkoY/vJtepCmLq/hb9YAmO0XB7yNK0Fg2ggCmgjCLC5jbo8EobV4xKpBmsjypTMde4jc/gzS1wMkNgsYmjY08wAAAABJRU5ErkJggg==");
+        background-size: cover;
+        background-repeat: no-repeat;
+      }
+
+      p {
+        font-size: 15px;
+        color: gray;
+      }
+    </style>
+    <div class="item-box">
+      <div class="song-img">
+        <div class="play-count">
+          <slot name="play-count">XXXX万</slot>
+        </div>
+      </div>
+      <p>
+        <slot name="song-list-name">东方Project</slot>
+      </p>
+    </div>
+  </template>
+
+  <template id="column-list-item-template">
+    <style>
+      .item-box {
+        display: inline-block;
+        width: 14em;
+        margin-right: 10px;
+      }
+
+      p {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        margin: 5px 0;
+      }
+
+      .song-img {
+        width: 100%;
+        height: 8em;
+        background: url("https://y.gtimg.cn/music/common/upload/category_area/4106837.jpeg?max_age=2592000");
+        background-size: contain;
+        border-radius: 8px;
+        position: relative;
+      }
+
+      .desc {
+        position: absolute;
+        bottom: 5px;
+        left: 5px;
+        z-index: 5;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: medium;
+        border-radius: 16px;
+      }
+
+      img {
+        margin-right: 5px;
+        border-radius: 100%;
+        overflow: hidden;
+      }
+
+      p {
+        font-size: 15px;
+        color: gray;
+      }
+    </style>
+    <div class="item-box">
+      <div class="song-img">
+        <div class="desc"><img width="50px" height="50px">
+          <slot name="desc">Hi-Res专区</slot>
+        </div>
+      </div>
+      <p>
+        <slot name="title">东方Project</slot>
+      </p>
+    </div>
+  </template>
+
+  <template id="column-slide-box-template">
+    <style>
+      .list-box {
+        width: 100%;
+        height: fit-content;
+      }
+
+      .column-slide-box {
+        display: flex;
+        width: 100%;
+        height: fit-content;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        overflow: scroll;
+      }
+
+      .column-slide-box::-webkit-scrollbar {
+        display: none;
+      }
+    </style>
+    <div class="list-box">
+      <div class="column-slide-box"></div>
+    </div>
+  </template>
+
+  <template id="rank-item-template">
+    <style>
+      .container {
+        width: 100%;
+        box-sizing: border-box;
+        height: 7rem;
+        padding: 1rem;
+        margin: 5px 0;
+      }
+
+      .card {
+        position: relative;
+        border-radius: 12px;
+        height: 7rem;
+        background: #fff;
+      }
+
+      .left-box {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: fit-content;
+        height: 100%;
+        padding: 5px;
+        box-sizing: border-box;
+      }
+
+      .right-box {
+        position: absolute;
+        right: 0;
+        width: 7rem;
+        height: 7rem;
+        border-radius: 0 12px 12px 0;
+        background: url("https://y.gtimg.cn/music/photo_new/T003R300x300M000003594CK329iYb.jpg?max_age=2592000");
+        background-repeat: no-repeat;
+        background-size: cover;
+      }
+
+      .update {
+        position: absolute;
+        top: 0;
+        right: 0;
+        margin: 5px;
+        font-size: small;
+        color: #fff;
+      }
+
+      .play-count {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        z-index: 5;
+        display: flex;
+        flex-direction: row;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: center;
+
+        background-color: rgba(26, 26, 26, 0.5);
+        color: white;
+        padding: 5px;
+        font-size: small;
+        border-radius: 16px;
+      }
+
+      .play-count::before {
+        content: "";
+        width: 10px;
+        height: 10px;
+        background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAMAAAC6V+0/AAAAQlBMVEUAAAD///////////////////////////////////////////////////////////////////////////////////8IX9KGAAAAFXRSTlMANKf2EQjsz8aUemg9LSMb29qrT07ELBLNAAAAUklEQVQY053QSQ6AIBBE0bYBxQFwqvtf1bgimkoY/vJtepCmLq/hb9YAmO0XB7yNK0Fg2ggCmgjCLC5jbo8EobV4xKpBmsjypTMde4jc/gzS1wMkNgsYmjY08wAAAABJRU5ErkJggg==");
+        background-size: cover;
+        background-repeat: no-repeat;
+      }
+
+      h3 {
+        margin: 5px 10px;
+        font-weight: 600;
+      }
+
+      ol {
+        margin-block-start: 0em;
+        margin-block-end: 0em;
+        line-height: 20px;
+        margin-inline-start: 0px;
+        margin-inline-end: 0px;
+        padding-inline-start: 10px;
+        font-size: small;
+      }
+
+      li {
+        list-style: none;
+      }
+    </style>
+    <div class="container">
+      <div class="card">
+        <div class="left-box">
+          <h3>
+            <slot name="title">XX榜</slot>
+          </h3>
+          <ol>
+            <li>
+              <span style="color: black;">1.</span><slot name="1st"><span style="color: rgb(80, 80, 80);">孤勇者</span>-<span style="color: rgb(162, 162, 162);">陈奕迅</span></slot>
+            </li>
+            <li>
+              <span style="color: black;">2.</span><slot name="2nd"><span style="color: rgb(80, 80, 80);">耍把戏</span>-<span style="color: rgb(162, 162, 162);">阿禹yy</span></slot>
+            </li>
+            <li>
+              <span style="color: black;">3.</span><slot name="3rd"><span style="color: rgb(80, 80, 80);">就忘了吧</span>-<span style="color: rgb(162, 162, 162);">1K</span></slot>
+            </li>
+          </ol>
+        </div>
+        <div class="right-box">
+          <div style="width: 100%;height: 100%;position: relative;">
+            <div class="update">
+              <slot name="update">每日更新</slot>
+            </div>
+            <div class="play-count">
+              <slot name="play-count">XXXX万</slot>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <template id="flow-box-template">
+    <style>
+      .list-box {
+        padding: 0 1rem;
+        width: 100%;
+        height: fit-content;
+      }
+
+      .flow-box {
+        display: flex;
+        width: 100%;
+        height: fit-content;
+        flex-direction: row;
+        justify-content: flex-start;
+        align-items: center;
+        overflow-y: scroll;
+        flex-wrap: wrap;
+      }
+
+      h4 {
+        margin: 10px 5px;
+      }
+
+      .flow-box::-webkit-scrollbar {
+        display: none;
+      }
+    </style>
+    <div class="list-box">
+      <h4>
+        <slot name="title">MISSING TITLE</slot>
+      </h4>
+      <div class="flow-box"></div>
+    </div>
+  </template>
+
+  <template id="flow-item-template">
+    <style>
+      .flow-item-box {
+        display: inline-block;
+        width: fit-content;
+        height: fit-content;
+        padding: 5px 10px;
+        margin: 5px 10px 5px 0;
+        border-radius: 16px;
+        color: gray;
+        background-color: #fff;
+        font-size: x-small;
+        cursor: pointer;
+      }
+    </style>
+    <div class="flow-item-box"><slot name="key">东方Project</slot></div>
+  </template>
+
+  <template id="song-item-template">
+    <style>
+      .song-item-box {
+        width: 100%;
+        padding: 10px;
+        box-sizing: border-box;
+        margin: 5px 10px;
+      }
+
+      .song-name {
+        font-size: 17px;
+        color: rgb(37, 37, 37);
+      }
+
+      .artist {
+        font-size: small;
+        color: rgb(190, 190, 190);
+        margin: 10px 0 0 0;
+      }
+    </style>
+    <div class="song-item-box">
+      <div class="song-name"><slot name="song-name">東方萃夢想</slot></div>
+      <div class="artist"><slot name="artist">TAMUSIC</slot></div>
+    </div>
+  </template>
+
+  <div id="app">
+    <tab-header></tab-header>
+    <section id="recommend-page">
+      <search-bar></search-bar>
+      <section id="recommend-content-page">
+        <row-slide-box id="offical-list">
+          <span slot="title">官方歌单</span>
+        </row-slide-box>
+        <row-slide-box id="intelligent-list">
+          <span slot="title">达人歌单</span>
+        </row-slide-box>
+        <row-slide-box id="column-list">
+          <span slot="title">专区</span>
+        </row-slide-box>
+      </section>
+      <section id="recommend-search-page" style="display: none;">
+        <section id="search-page">
+          <flow-box id="search-history" style="display: none;">
+            <span slot="title">搜索历史</span>
+          </flow-box>
+          <flow-box id="hot-key">
+            <span slot="title">热门搜索</span>
+          </flow-box>
+        </section>
+        <section id="search-result-page" style="display: none;">
+          <column-slide-box id="search-result"></column-slide-box>
+        </section>
+      </section>
+    </section>
+    <section id="rank-page" style="display: none;">
+      <column-slide-box id="rank-list"></column-slide-box>
+    </section>
+  </div>
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+</body>
+
+</html>
